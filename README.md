@@ -3,10 +3,11 @@
  * @Author: 小白
  * @Date: 2020-04-07 20:48:03
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 11:38:22
+ * @LastEditTime: 2020-04-09 12:26:11
  -->
 # ts-indexdb
 typescript对indexdb本地数据库的封装
+[![Build Status](https://travis-ci.com/q1104133609/Ts-IndexDb.svg?branch=master)](https://travis-ci.com/q1104133609/Ts-IndexDb)
 ### _安装：_
 ```
     npm install ts-indexdb --save

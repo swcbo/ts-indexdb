@@ -3,7 +3,7 @@
  * @Author: 小白
  * @Date: 2020-04-08 21:25:02
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 11:17:44
+ * @LastEditTime: 2020-04-09 13:43:03
  */
 export type IIndexDb = {
     dbName: string

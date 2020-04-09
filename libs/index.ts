@@ -7,7 +7,6 @@
  */
 
 import { TsIndexDb, IIndexDb } from "./TsIndexDb"
-
 export const init = ({ dbName, version = new Date().getTime(), tables = [] }: IIndexDb): Promise<TsIndexDb> => {
     const db = TsIndexDb.getInstance({
         dbName,

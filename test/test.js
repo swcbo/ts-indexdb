@@ -6,5 +6,6 @@ const IndexDb = require('../dist/lib/index').default;
 describe('test indexdb', () => {
     // jsdom()
     it('has document', () => {
+        
     });
 });

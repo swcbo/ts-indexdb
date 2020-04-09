@@ -1,0 +1,31 @@
+{
+  "name": "ts_index_db",
+  "version": "0.0.2",
+  "description": "typescript indexDb封装",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/q1104133609/Ts-IndexDb.git"
+  },
+  "keywords": [
+    "indexdb",
+    "typescript"
+  ],
+  "author": "小白",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/q1104133609/Ts-IndexDb/issues"
+  },
+  "homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "jsdom": "^16.2.2",
+    "mocha": "^7.1.1",
+    "mocha-jsdom": "^2.0.0",
+    "typescript": "^3.8.3"
+  }
+}

@@ -3,7 +3,7 @@
  * @Author: 小白
  * @Date: 2020-04-07 20:48:03
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 13:07:38
+ * @LastEditTime: 2020-04-09 13:23:17
  -->
 # ts-indexdb 
 [![Build Status](https://travis-ci.com/q1104133609/Ts-IndexDb.svg?branch=master)](https://travis-ci.com/q1104133609/Ts-IndexDb)
@@ -30,7 +30,7 @@ import TsIndexDb = require('ts-indexdb');
 ```
 ## 数据库操作方法
 ### 注意
-* 当前类为单利模式只要init一次,后面直接getInstance获取实例来操作数据库
+* 当前类为单例模式只要init一次,后面直接getInstance获取实例来操作数据库
 * 操作返回的均为Promis对象
 * js不用加泛型
 ### 数据库与表操作

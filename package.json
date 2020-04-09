@@ -1,5 +1,5 @@
 {
-  "name": "ts_index_db",
+  "name": "ts-indexdb",
   "version": "0.0.2",
   "description": "typescript indexDb封装",
   "main": "index.ts",

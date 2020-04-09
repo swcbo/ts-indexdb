@@ -3,13 +3,13 @@
  * @Author: 小白
  * @Date: 2020-04-07 20:48:03
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 11:34:53
+ * @LastEditTime: 2020-04-09 11:38:22
  -->
-# ts-indexDb
+# ts-indexdb
 typescript对indexdb本地数据库的封装
 ### _安装：_
 ```
-    npm install ts-indexDb --save
+    npm install ts-indexdb --save
 ```
 // let queryAll = await getInstance().queryAll<Rack>({
     //   tableName: 'bookrackList'

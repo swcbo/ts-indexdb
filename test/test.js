@@ -1,11 +1,9 @@
 'use strict';
-const expect = require('chai').expect;
-var jsdom = require('jsdom')
-const IndexDb = require('../dist/lib/index').default;
+// const expect = require('chai').expect;
+// const IndexDb = require('../dist/lib/index').default;
 
-describe('test indexdb', () => {
-    // jsdom()
-    it('has document', () => {
-        
-    });
+describe('true test', function () {
+  it('contains a passing spec', function () {
+    console.log('Hello Karma');
+  })
 });

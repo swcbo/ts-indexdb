@@ -3,15 +3,15 @@
  * @Author: 小白
  * @Date: 2020-04-07 20:48:03
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 13:23:17
+ * @LastEditTime: 2020-04-09 13:29:49
  -->
 # ts-indexdb 
 [![Build Status](https://travis-ci.com/q1104133609/Ts-IndexDb.svg?branch=master)](https://travis-ci.com/q1104133609/Ts-IndexDb)
 ## Install
 
 ```sh
-npm install ts-indexdb -D
-yarn add ts-indexdb -D
+npm install ts-indexdb
+yarn add ts-indexdb
 ```
 ## Usage
 ### Typescript

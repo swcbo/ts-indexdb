@@ -25,7 +25,6 @@ export declare class TsIndexDb {
     private dbName;
     private version;
     private tableList;
-    private idb;
     private db;
     constructor({ dbName, version, tables }: IIndexDb);
     private static _instance;
@@ -105,6 +104,11 @@ export declare class TsIndexDb {
      * @method 打开数据库
      */
     open_db(): Promise<TsIndexDb>;
+    /**
+        *@method 关闭数据库
+        * @param  {[type]} db [数据库名称]
+        */
+    close_db(): Promise<unknown>;
     /**
      * @method 删除数据库
      * @param {String}name 数据库名称

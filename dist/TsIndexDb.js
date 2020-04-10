@@ -5,12 +5,9 @@ class TsIndexDb {
         this.dbName = ''; //数据库名称
         this.version = 1; //数据库版本
         this.tableList = []; //表单列表
-        this.idb = null;
         this.db = null;
         this.dbName = dbName;
         this.version = version;
-        this.db = null;
-        this.idb = null;
         this.tableList = tables;
     }
     static getInstance(dbOptions) {
@@ -184,12 +181,32 @@ class TsIndexDb {
                 resolve(this);
             };
             //数据库升级
-            request.onupgradeneeded = (event) => {
-                this.idb = event.target.result;
+            request.onupgradeneeded = e => {
                 this.tableList.forEach((element) => {
-                    this.create_table(this.idb, element);
+                    this.create_table(e.target.result, element);
                 });
             };
+        });
+    }
+    /**
+        *@method 关闭数据库
+        * @param  {[type]} db [数据库名称]
+        */
+    close_db() {
+        return new Promise((resolve, reject) => {
+            try {
+                if (!this.db) {
+                    resolve('请开启数据库');
+                    return;
+                }
+                this.db.close();
+                this.db = null;
+                TsIndexDb._instance = null;
+                resolve();
+            }
+            catch (error) {
+                reject(error);
+            }
         });
     }
     /**
@@ -221,9 +238,9 @@ class TsIndexDb {
      * @option<Object>  keyPath指定主键 autoIncrement是否自增
      * @index 索引配置
      * */
-    create_table({ objectStoreNames, createObjectStore }, { tableName, option, indexs = [] }) {
-        if (!objectStoreNames.contains(tableName)) {
-            let store = createObjectStore(tableName, option);
+    create_table(idb, { tableName, option, indexs = [] }) {
+        if (!idb.objectStoreNames.contains(tableName)) {
+            let store = idb.createObjectStore(tableName, option);
             for (let { key, option } of indexs) {
                 store.createIndex(key, key, option);
             }

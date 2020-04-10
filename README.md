@@ -3,7 +3,7 @@
  * @Author: 小白
  * @Date: 2020-04-07 20:48:03
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 13:29:49
+ * @LastEditTime: 2020-04-09 17:59:43
  -->
 # ts-indexdb 
 [![Build Status](https://travis-ci.com/q1104133609/Ts-IndexDb.svg?branch=master)](https://travis-ci.com/q1104133609/Ts-IndexDb)
@@ -40,6 +40,7 @@ open_db|打开数据库|无|-
 close_db|关闭数据库|无|-
 delete_db|删除数据库|String|name
 delete_table|删除表数据|String|tableName
+
 
 ### 查询操作(query)
 方法|方法名|参数|属性

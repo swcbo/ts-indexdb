@@ -1,6 +1,6 @@
 {
   "name": "ts-indexdb",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "typescript indexDb封装",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

@@ -3,7 +3,7 @@
  * @Author: 小白
  * @Date: 2020-04-08 21:25:02
  * @LastEditors: 小白
- * @LastEditTime: 2020-04-09 13:43:03
+ * @LastEditTime: 2020-04-10 14:40:36
  */
 export type IIndexDb = {
     dbName: string
@@ -32,13 +32,10 @@ export class TsIndexDb {
     private dbName: string = '';//数据库名称
     private version: number = 1;//数据库版本
     private tableList: DbTable[] = [];//表单列表
-    private idb: IDBDatabase | null = null;
     private db: IDBDatabase | null = null;
     constructor({ dbName, version, tables }: IIndexDb) {
         this.dbName = dbName;
         this.version = version;
-        this.db = null;
-        this.idb = null;
         this.tableList = tables;
     }
 
@@ -232,13 +229,34 @@ export class TsIndexDb {
                 resolve(this);
             };
             //数据库升级
-            request.onupgradeneeded = (event: any) => {
-                this.idb = event.target.result;
+            request.onupgradeneeded = e => {
                 this.tableList.forEach((element: DbTable) => {
-                    this.create_table(this.idb!, element);
+                    this.create_table((e.target as any).result, element);
                 });
             };
         });
+    }
+
+    /**
+        *@method 关闭数据库
+        * @param  {[type]} db [数据库名称]
+        */
+    close_db() {
+        return new Promise((resolve, reject) => {
+            try {
+                if (!this.db) {
+                    resolve('请开启数据库')
+                    return
+                }
+                this.db!.close();
+                this.db = null
+                TsIndexDb._instance = null;
+                resolve()
+            } catch (error) {
+                reject(error)
+            }
+        })
+
     }
     /**
      * @method 删除数据库
@@ -271,9 +289,10 @@ export class TsIndexDb {
      * @option<Object>  keyPath指定主键 autoIncrement是否自增
      * @index 索引配置
      * */
-    private create_table({ objectStoreNames, createObjectStore }: IDBDatabase, { tableName, option, indexs = [] }: DbTable) {
-        if (!objectStoreNames.contains(tableName)) {
-            let store = createObjectStore(tableName, option);
+    private create_table(idb: any, { tableName, option, indexs = [] }: DbTable) {
+
+        if (!idb.objectStoreNames.contains(tableName)) {
+            let store = idb.createObjectStore(tableName, option);
             for (let { key, option } of indexs) {
                 store.createIndex(key, key, option);
             }

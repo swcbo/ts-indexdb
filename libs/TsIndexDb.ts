@@ -33,6 +33,7 @@ export class TsIndexDb {
     private version: number = 1;//数据库版本
     private tableList: DbTable[] = [];//表单列表
     private db: IDBDatabase | null = null;
+    private queue: (() => void)[] = []; //事务队列，实例化一次以后下次打开页面时数据库自启动
     constructor({ dbName, version, tables }: IIndexDb) {
         this.dbName = dbName;
         this.version = version;
@@ -128,9 +129,9 @@ export class TsIndexDb {
             this.cursor_success(e, {
                 condition,
                 handler: ({ currentValue, cursor }: any) => {
-                    handle(currentValue);
-                    res.push(currentValue);
-                    cursor.update(currentValue);
+                    const value = handle(currentValue);
+                    res.push(value as any);
+                    cursor.update(value);
                 },
                 success: () => {
                     resolve(res);
@@ -154,10 +155,10 @@ export class TsIndexDb {
                     resolve(null);
                     return
                 }
-                handle(currentValue);
-                store.put(currentValue);
-                resolve(currentValue);
-            })
+                const value = handle(currentValue);
+                store.put(value);
+                resolve(value as any);
+            });
     }
 
     //=================relate insert================================
@@ -225,7 +226,13 @@ export class TsIndexDb {
                 reject(e);
             };
             request.onsuccess = (event: any) => {
-                this.db = event.target.result
+                this.db = event.target.result;
+                let task: () => void;
+
+                while (task = this.queue.pop() as any) {
+                    task();
+                }
+
                 resolve(this);
             };
             //数据库升级
@@ -251,7 +258,7 @@ export class TsIndexDb {
                 this.db!.close();
                 this.db = null
                 TsIndexDb._instance = null;
-                resolve()
+                resolve(true)
             } catch (error) {
                 reject(error)
             }
@@ -312,33 +319,41 @@ export class TsIndexDb {
         mode: IDBTransactionMode = 'readwrite',
         backF?: (request: any, resolve: any, store: IDBObjectStore) => void) {
         return new Promise<T>((resolve, reject) => {
-            try {
-                if (this.db) {
-                    let store = this.db.transaction(tableName, mode).objectStore(tableName);
-                    if (!commit) {
-                        backF!(null, resolve, store)
-                        return
-                    }
-                    let res = commit(store)
-                    res!.onsuccess = (e: any) => {
-                        if (backF) {
-                            backF(e, resolve, store)
-                        } else {
-                            resolve(e)
+            const task = () => {
+                try {
+                    if (this.db) {
+                        let store = this.db.transaction(tableName, mode).objectStore(tableName);
+                        if (!commit) {
+                            backF!(null, resolve, store);
+                            return;
                         }
-                    }
-                    res!.onerror = (event) => {
-                        reject(event)
-                    }
+                        let res = commit(store);
+                        res!.onsuccess = (e: any) => {
+                            if (backF) {
+                                backF(e, resolve, store);
+                            } else {
+                                resolve(e);
+                            }
+                        };
+                        res!.onerror = (event) => {
+                            reject(event);
+                        };
 
-                } else {
-                    reject(new Error('请开启数据库'))
+                    } else {
+                        reject(new Error('请开启数据库'));
+                    }
+                } catch (error) {
+                    reject(error);
                 }
-            } catch (error) {
-                reject(error)
-            }
+            };
 
-        })
+            if (!this.db) {
+                this.queue.push(task);
+            } else {
+                task();
+            }
+            
+        });
     }
 
     /**

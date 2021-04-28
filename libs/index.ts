@@ -37,7 +37,7 @@ export const init = ({ dbName, version = 1, tables = [] }: IIndexDb): Promise<Ts
 }
 
 /**
- * @method 获取单利单个
+ * @method 获取单例的单个对象
  */
 export const getInstance = () => TsIndexDb.getInstance()
 

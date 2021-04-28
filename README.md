@@ -159,6 +159,7 @@ await init({
         condition: item => item.id === 8,
         handle: r => {
           r.name = '测试修改';
+          return r;
         }
   })
 
@@ -175,6 +176,7 @@ await init({
         value: 1,
         handle: r => {
           r.name = '测试修改';
+          return r;
         }
   })
 

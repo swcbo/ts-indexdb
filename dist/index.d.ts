@@ -6,6 +6,6 @@ import { TsIndexDb, IIndexDb } from "./TsIndexDb";
  */
 export declare const init: ({ dbName, version, tables }: IIndexDb) => Promise<TsIndexDb>;
 /**
- * @method 获取单利单个
+ * @method 获取单例的单个对象
  */
 export declare const getInstance: () => TsIndexDb;

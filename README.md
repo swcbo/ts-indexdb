@@ -171,7 +171,7 @@ await init({
   *   @property {String\|Number} value 目标主键值
   *   @property {Function} handle 处理函数，接收本条数据的引用，对其修改
   * */
-  await getInstance().update<Rack>({
+  await getInstance().update_by_primaryKey<Rack>({
         tableName: 'bookrackList',
         value: 1,
         handle: r => {

@@ -6,6 +6,7 @@ class TsIndexDb {
         this.version = 1; //数据库版本
         this.tableList = []; //表单列表
         this.db = null;
+        this.queue = []; //事务队列，实例化一次以后下次打开页面时数据库自启动
         this.dbName = dbName;
         this.version = version;
         this.tableList = tables;
@@ -49,6 +50,35 @@ class TsIndexDb {
         });
     }
     /**
+     * @method 查询满足key条件的个数(返回满足条件的数字个数)
+     * @param {Object}
+     *   @property {String} tableName 表名
+     *   @property {Number|String} key 查询的key
+     *   @property {Object} countCondition 查询条件
+     * */
+    /** countCondition传入方式 key 必须为已经简历索引的字段
+     *  key ≥ x	            {key: 'gt' rangeValue: [x]}
+        key > x	            {key: 'gt' rangeValue: [x, true]}
+        key ≤ y	            {key: 'lt' rangeValue: [y]}
+        key < y	            {key: 'lt' rangeValue: [y, true]}
+        key ≥ x && ≤ y	    {key: 'between' rangeValue: [x, y]}
+        key > x &&< y	    {key: 'between' rangeValue: [x, y, true, true]}
+        key > x && ≤ y	    {key: 'between' rangeValue: [x, y, true, false]}
+        key ≥ x &&< y	    {key: 'between' rangeValue: [x, y, false, true]}
+        key = z	            {key: 'equal' rangeValue: [z]}
+     */
+    count({ tableName, key, countCondition }) {
+        const mapCondition = {
+            equal: IDBKeyRange.only,
+            gt: IDBKeyRange.lowerBound,
+            lt: IDBKeyRange.upperBound,
+            between: IDBKeyRange.bound,
+        };
+        return this.commitDb(tableName, (transaction) => transaction.index(key).count(mapCondition[countCondition.type](...countCondition.rangeValue)), 'readonly', (e, resolve) => {
+            resolve(e.target.result || null);
+        });
+    }
+    /**
      * @method 查询数据(更具表具体属性)返回具体某一个
      * @param {Object}
      *   @property {String} tableName 表名
@@ -89,9 +119,9 @@ class TsIndexDb {
             this.cursor_success(e, {
                 condition,
                 handler: ({ currentValue, cursor }) => {
-                    handle(currentValue);
-                    res.push(currentValue);
-                    cursor.update(currentValue);
+                    const value = handle(currentValue);
+                    res.push(value);
+                    cursor.update(value);
                 },
                 success: () => {
                     resolve(res);
@@ -113,9 +143,9 @@ class TsIndexDb {
                 resolve(null);
                 return;
             }
-            handle(currentValue);
-            store.put(currentValue);
-            resolve(currentValue);
+            const value = handle(currentValue);
+            store.put(value);
+            resolve(value);
         });
     }
     //=================relate insert================================
@@ -178,6 +208,10 @@ class TsIndexDb {
             };
             request.onsuccess = (event) => {
                 this.db = event.target.result;
+                let task;
+                while (task = this.queue.pop()) {
+                    task();
+                }
                 resolve(this);
             };
             //数据库升级
@@ -202,7 +236,7 @@ class TsIndexDb {
                 this.db.close();
                 this.db = null;
                 TsIndexDb._instance = null;
-                resolve();
+                resolve(true);
             }
             catch (error) {
                 reject(error);
@@ -255,32 +289,40 @@ class TsIndexDb {
      */
     commitDb(tableName, commit, mode = 'readwrite', backF) {
         return new Promise((resolve, reject) => {
-            try {
-                if (this.db) {
-                    let store = this.db.transaction(tableName, mode).objectStore(tableName);
-                    if (!commit) {
-                        backF(null, resolve, store);
-                        return;
+            const task = () => {
+                try {
+                    if (this.db) {
+                        let store = this.db.transaction(tableName, mode).objectStore(tableName);
+                        if (!commit) {
+                            backF(null, resolve, store);
+                            return;
+                        }
+                        let res = commit(store);
+                        res.onsuccess = (e) => {
+                            if (backF) {
+                                backF(e, resolve, store);
+                            }
+                            else {
+                                resolve(e);
+                            }
+                        };
+                        res.onerror = (event) => {
+                            reject(event);
+                        };
                     }
-                    let res = commit(store);
-                    res.onsuccess = (e) => {
-                        if (backF) {
-                            backF(e, resolve, store);
-                        }
-                        else {
-                            resolve(e);
-                        }
-                    };
-                    res.onerror = (event) => {
-                        reject(event);
-                    };
+                    else {
+                        reject(new Error('请开启数据库'));
+                    }
                 }
-                else {
-                    reject(new Error('请开启数据库'));
+                catch (error) {
+                    reject(error);
                 }
+            };
+            if (!this.db) {
+                this.queue.push(task);
             }
-            catch (error) {
-                reject(error);
+            else {
+                task();
             }
         });
     }

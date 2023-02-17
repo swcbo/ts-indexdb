@@ -35,6 +35,6 @@ exports.init = ({ dbName, version = 1, tables = [] }) => {
     return db.open_db();
 };
 /**
- * @method 获取单利单个
+ * @method 获取单例的单个对象
  */
 exports.getInstance = () => TsIndexDb_1.TsIndexDb.getInstance();

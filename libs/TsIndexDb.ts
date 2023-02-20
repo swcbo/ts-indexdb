@@ -400,7 +400,7 @@ export class TsIndexDb {
     * @param {Function} 游标遍历完执行的方法
     * @return {Null}
     * */
-    cursor_success(e: any, { condition, handler, success }: any) {
+    cursor_success(e: any, { condition, handler, success }: any):void {
         const cursor: IDBCursorWithValue = e.target.result;
         if (cursor) {
             const currentValue = cursor.value;

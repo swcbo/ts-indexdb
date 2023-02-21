@@ -141,7 +141,34 @@ await init({
      tableName: 'bookrackList',
      value: 3
    });
-   ```
+  /**
+     * @method 查询满足key条件的个数(返回满足条件的数字个数)
+     * @param {Object}
+     *   @property {String} tableName 表名
+     *   @property {Number|String} key 查询的key
+     *   @property {Object} countCondition 查询条件
+   * */
+  /** countCondition传入方式 key 必须为已经简历索引的字段
+   *  key ≥ x	            {key: 'gt' rangeValue: [x]}
+      key > x	            {key: 'gt' rangeValue: [x, true]}
+      key ≤ y	            {key: 'lt' rangeValue: [y]}
+      key < y	            {key: 'lt' rangeValue: [y, true]}
+      key ≥ x && ≤ y	    {key: 'between' rangeValue: [x, y]}
+      key > x &&< y	    {key: 'between' rangeValue: [x, y, true, true]}
+      key > x && ≤ y	    {key: 'between' rangeValue: [x, y, true, false]}
+      key ≥ x &&< y	    {key: 'between' rangeValue: [x, y, false, true]}
+      key = z	            {key: 'equal' rangeValue: [z]}
+   */
+  await getInstance().count<Rack>({
+    tableName: 'bookrackList',
+    key: 'createdTime',
+    countCondition: {
+      type: 'between',
+      rangeValue:[1676627113088,new Date().getTime()]
+    }
+  })
+
+  ```
 
 ### 更新
 ```

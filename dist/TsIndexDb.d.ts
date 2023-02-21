@@ -12,11 +12,18 @@ export declare type DbTable = {
     option?: IDBObjectStoreParameters;
     indexs: DbIndex[];
 };
+export declare type AtleastOne<T, U = {
+    [K in keyof T]: Pick<T, K>;
+}> = Partial<T> & U[keyof U];
 export interface DbOperate<T> {
     tableName: string;
     key: string;
     data: T | T[];
     value: string | number;
+    countCondition: {
+        type: 'equal' | 'gt' | 'lt' | 'between';
+        rangeValue: [any, any?, any?, any?];
+    };
     condition(data: T): boolean;
     success(res: T[] | T): void;
     handle(res: T): void;
@@ -26,6 +33,7 @@ export declare class TsIndexDb {
     private version;
     private tableList;
     private db;
+    private queue;
     constructor({ dbName, version, tables }: IIndexDb);
     private static _instance;
     static getInstance(dbOptions?: IIndexDb): TsIndexDb;
@@ -42,6 +50,25 @@ export declare class TsIndexDb {
      *   @property {Function} condition 查询的条件
      * */
     query<T>({ tableName, condition }: Pick<DbOperate<T>, 'condition' | 'tableName'>): Promise<T[]>;
+    /**
+     * @method 查询满足key条件的个数(返回满足条件的数字个数)
+     * @param {Object}
+     *   @property {String} tableName 表名
+     *   @property {Number|String} key 查询的key
+     *   @property {Object} countCondition 查询条件
+     * */
+    /** countCondition传入方式 key 必须为已经简历索引的字段
+     *  key ≥ x	            {key: 'gt' rangeValue: [x]}
+        key > x	            {key: 'gt' rangeValue: [x, true]}
+        key ≤ y	            {key: 'lt' rangeValue: [y]}
+        key < y	            {key: 'lt' rangeValue: [y, true]}
+        key ≥ x && ≤ y	    {key: 'between' rangeValue: [x, y]}
+        key > x &&< y	    {key: 'between' rangeValue: [x, y, true, true]}
+        key > x && ≤ y	    {key: 'between' rangeValue: [x, y, true, false]}
+        key ≥ x &&< y	    {key: 'between' rangeValue: [x, y, false, true]}
+        key = z	            {key: 'equal' rangeValue: [z]}
+     */
+    count<T>({ tableName, key, countCondition }: Pick<DbOperate<T>, 'key' | 'tableName' | 'countCondition'>): Promise<T>;
     /**
      * @method 查询数据(更具表具体属性)返回具体某一个
      * @param {Object}

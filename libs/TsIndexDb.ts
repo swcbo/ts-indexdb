@@ -16,11 +16,19 @@ export type DbTable = {
     option?: IDBObjectStoreParameters
     indexs: DbIndex[]
 }
+export type AtleastOne<T, U = { [K in keyof T]:Pick<T,K> }> = Partial<T>&U[keyof U]
+interface MapCondition {
+    equal: (value:any)=>IDBKeyRange,
+    gt: (lower: any, open?: boolean)=>IDBKeyRange,
+    lt: (upper: any, open?: boolean)=>IDBKeyRange,
+    between: (lower: any, upper: any, lowerOpen?: boolean, upperOpen?: boolean)=>IDBKeyRange,
+}
 export interface DbOperate<T> {
     tableName: string,
     key: string,
     data: T | T[],
     value: string | number,
+    countCondition: {type: 'equal'|'gt'|'lt'|'between',rangeValue: [any,any?,any?,any?]},
     condition(data: T): boolean
     success(res: T[] | T): void
     handle(res: T): void
@@ -83,6 +91,36 @@ export class TsIndexDb {
                 handler: ({ currentValue }: any) => res.push(currentValue),
                 success: () => resolve(res)
             })
+        })
+    }
+
+    /**
+     * @method 查询满足key条件的个数(返回满足条件的数字个数)
+     * @param {Object}
+     *   @property {String} tableName 表名
+     *   @property {Number|String} key 查询的key
+     *   @property {Object} countCondition 查询条件
+     * */
+    /** countCondition传入方式 key 必须为已经简历索引的字段
+     *  key ≥ x	            {key: 'gt' rangeValue: [x]}
+        key > x	            {key: 'gt' rangeValue: [x, true]}
+        key ≤ y	            {key: 'lt' rangeValue: [y]}
+        key < y	            {key: 'lt' rangeValue: [y, true]}
+        key ≥ x && ≤ y	    {key: 'between' rangeValue: [x, y]}
+        key > x &&< y	    {key: 'between' rangeValue: [x, y, true, true]}
+        key > x && ≤ y	    {key: 'between' rangeValue: [x, y, true, false]}
+        key ≥ x &&< y	    {key: 'between' rangeValue: [x, y, false, true]}
+        key = z	            {key: 'equal' rangeValue: [z]}
+     */
+    count<T>({ tableName, key, countCondition }: Pick<DbOperate<T>, 'key' | 'tableName' | 'countCondition'>) {
+        const mapCondition: MapCondition = {
+            equal: IDBKeyRange.only,
+            gt: IDBKeyRange.lowerBound,
+            lt: IDBKeyRange.upperBound,
+            between: IDBKeyRange.bound,
+        }
+        return this.commitDb<T>(tableName, (transaction: IDBObjectStore) => transaction.index(key).count(mapCondition[countCondition.type](...countCondition.rangeValue)), 'readonly', (e: any, resolve: (data: T) => void) => {
+            resolve(e.target.result || null);
         })
     }
 
@@ -280,7 +318,6 @@ export class TsIndexDb {
             };
         });
     }
-
     /**
     * @method 删除表数据
     * @param {String}name 数据库名称
@@ -363,7 +400,7 @@ export class TsIndexDb {
     * @param {Function} 游标遍历完执行的方法
     * @return {Null}
     * */
-    cursor_success(e: any, { condition, handler, success }: any) {
+    cursor_success(e: any, { condition, handler, success }: any):void {
         const cursor: IDBCursorWithValue = e.target.result;
         if (cursor) {
             const currentValue = cursor.value;

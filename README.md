@@ -49,6 +49,7 @@ queryAll|查询某张表的所有数据(返回具体数组)|Object|{ tableName }
 query|查询(返回具体数组)|Object|{ tableName, condition }
 query_by_keyValue|查询数据(更具表具体属性)返回具体某一个|Object|{ tableName, key, value }
 query_by_primaryKey|查询数据（主键值）|Object|{ tableName, value }
+count|查询数据（主键值）|Object|{ tableName, key, countCondition:{type,rangeValue } }
 
 ### 更新操作(update)
 方法|方法名|参数|属性

@@ -6,7 +6,7 @@
  * @LastEditTime: 2020-04-09 17:59:43
  -->
 # ts-indexdb 
-[![Build Status](https://travis-ci.com/q1104133609/Ts-IndexDb.svg?branch=master)](https://travis-ci.com/q1104133609/Ts-IndexDb)
+[![Build Status](https://travis-ci.com/swcbo/ts-indexdb.svg?branch=master)](https://travis-ci.com/swcbo/ts-indexdb)
 ## Install
 
 ```sh

@@ -209,7 +209,7 @@ class TsIndexDb {
             request.onsuccess = (event) => {
                 this.db = event.target.result;
                 let task;
-                while (task = this.queue.pop()) {
+                while (task = this.queue.shift()) {
                     task();
                 }
                 resolve(this);

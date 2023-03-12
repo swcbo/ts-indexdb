@@ -267,7 +267,7 @@ export class TsIndexDb {
                 this.db = event.target.result;
                 let task: () => void;
 
-                while (task = this.queue.pop() as any) {
+                while (task = this.queue.shift() as any) {
                     task();
                 }
 

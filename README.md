@@ -6,7 +6,11 @@
  * @LastEditTime: 2020-04-09 17:59:43
  -->
 # ts-indexdb 
-[![Build Status](https://travis-ci.com/swcbo/ts-indexdb.svg?branch=master)](https://app.travis-ci.com/github/swcbo/ts-indexdb)
+<p align="center">
+ <a href="https://travis-ci.com/swcbo/rmox"><img src="https://travis-ci.com/swcbo/ts-indexdb.svg?branch=master" alt="npm package"></a>
+  <a href="https://npmjs.com/package/ts-indexdb"><img src="https://img.shields.io/npm/v/ts-indexdb.svg?logo=npm" alt="npm package"></a>
+  <a href="https://bundlephobia.com/package/ts-indexdb@latest"><img src="https://img.shields.io/bundlephobia/min/ts-indexdb.svg?logo=typescript" alt="size"></a>
+</p>
 ## Install
 
 ```sh

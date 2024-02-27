@@ -8,20 +8,6 @@
 
 import { TsIndexDb, IIndexDb } from "./TsIndexDb"
 
-
-// /**
-//  * @method 初始化函数
-//  * @param param0 
-//  * @param isMany 
-//  */
-// export const initMany = (dbList: IIndexDb[]): Promise<TsIndexDb> => {
-//     const db = TsIndexDb.getInstance({
-//         dbName,
-//         version,
-//         tables
-//     })
-//     return db.open_db()
-// }
 /**
  * @method 初始化函数
  * @param param0 

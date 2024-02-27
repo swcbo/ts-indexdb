@@ -16,6 +16,7 @@
 ```sh
 npm install ts-indexdb
 yarn add ts-indexdb
+pnpm add ts-indexdb
 ```
 ## Usage
 ### Typescript

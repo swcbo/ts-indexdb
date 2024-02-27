@@ -1,71 +1,85 @@
-/*
- * @Description: file content
- * @Author: 小白
- * @Date: 2020-04-08 21:25:02
- * @LastEditors: 小白
- * @LastEditTime: 2020-04-10 14:40:36
- */
-export type IIndexDb = {
-	dbName: string;
-	version: number;
-	tables: DbTable[];
-};
-export type DbIndex = { key: string; option?: IDBIndexParameters };
-export type DbTable = {
-	tableName: string;
-	option?: IDBObjectStoreParameters;
-	indexs: DbIndex[];
-};
-export type AtleastOne<T, U = { [K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U];
-interface MapCondition {
-	equal: (value: any) => IDBKeyRange;
-	gt: (lower: any, open?: boolean) => IDBKeyRange;
-	lt: (upper: any, open?: boolean) => IDBKeyRange;
-	between: (
-		lower: any,
-		upper: any,
-		lowerOpen?: boolean,
-		upperOpen?: boolean,
-	) => IDBKeyRange;
-}
+import type {
+	ConditionMap,
+	DBRequestEventTarget,
+	DBTable,
+	DbOperator,
+	IndexDB,
+} from './types';
 
-interface DBRequestEventTarget extends EventTarget {
-	result: IDBDatabase | null;
-}
-
-export interface DbOperate<T> {
-	tableName: string;
-	key: string;
-	data: T | T[];
-	value: string | number;
-	countCondition: {
-		type: 'equal' | 'gt' | 'lt' | 'between';
-		rangeValue: [any, any?, any?, any?];
-	};
-	condition(data: T): boolean;
-	success(res: T[] | T): void;
-	handle(res: T): void;
-}
-
-export class TsIndexDb {
+export class TsIndexDB {
 	private dbName: string = ''; //数据库名称
 	private version: number = 1; //数据库版本
-	private tableList: DbTable[] = []; //表单列表
+	private tableList: DBTable[] = []; //表单列表
 	private db: IDBDatabase | null = null;
 	private queue: (() => void)[] = []; //事务队列，实例化一次以后下次打开页面时数据库自启动
-	constructor({ dbName, version, tables }: IIndexDb) {
-		this.dbName = dbName;
+	constructor({ dbName, name, version, tables }: IndexDB) {
+		this.dbName = dbName || name;
 		this.version = version;
 		this.tableList = tables;
 	}
 
-	private static _instance: TsIndexDb | null = null;
+	private static _instance?: TsIndexDB;
 
-	public static getInstance(dbOptions?: IIndexDb): TsIndexDb {
-		if (TsIndexDb._instance === null && dbOptions) {
-			TsIndexDb._instance = new TsIndexDb(dbOptions);
+	public static getInstance(options?: IndexDB): TsIndexDB | undefined {
+		if (TsIndexDB._instance) {
+			return TsIndexDB._instance;
 		}
-		return TsIndexDb._instance!;
+		if (options) {
+			const instance = new TsIndexDB(options);
+			TsIndexDB._instance = instance;
+			return instance;
+		}
+		return void 0;
+	}
+
+	/**
+	 * 提交Db请求
+	 * @param name  表名
+	 * @param commit 提交具体函数
+	 * @param mode 事物方式
+	 * @param backF 游标方法
+	 */
+	private commitDb<T>(
+		name: string,
+		commit?: (transaction: IDBObjectStore) => IDBRequest,
+		mode: IDBTransactionMode = 'readwrite',
+		callback?: (request: any, resolve: any, store: IDBObjectStore) => void,
+	) {
+		return new Promise<T>((resolve, reject) => {
+			const task = () => {
+				try {
+					if (this.db) {
+						const store = this.db.transaction(name, mode).objectStore(name);
+						if (!commit) {
+							callback!(null, resolve, store);
+							return;
+						}
+						const res = commit(store);
+						// todo
+						res.onsuccess = (e: DBEvent<T>) => {
+							if (typeof callback === 'function') {
+								callback(e, resolve, store);
+							} else {
+								resolve(e);
+							}
+						};
+						res.onerror = (event) => {
+							reject(event);
+						};
+					} else {
+						reject(new Error('请开启数据库'));
+					}
+				} catch (error) {
+					reject(error);
+				}
+			};
+
+			if (!this.db) {
+				this.queue.push(task);
+			} else {
+				task();
+			}
+		});
 	}
 
 	//=================relate select================================
@@ -74,7 +88,7 @@ export class TsIndexDb {
 	 * @param {Object}
 	 *   @property {String} tableName 表名
 	 */
-	queryAll<T>({ tableName }: Pick<DbOperate<T>, 'tableName'>) {
+	queryAll<T>({ tableName }: Pick<DbOperator<T>, 'tableName'>) {
 		const res: T[] = [];
 		return this.commitDb<T[]>(
 			tableName,
@@ -96,7 +110,7 @@ export class TsIndexDb {
 	 *   @property {String} tableName 表名
 	 *   @property {Function} condition 查询的条件
 	 * */
-	query<T>({ tableName, condition }: Pick<DbOperate<T>, 'condition' | 'tableName'>) {
+	query<T>({ tableName, condition }: Pick<DbOperator<T>, 'condition' | 'tableName'>) {
 		const res: T[] = [];
 		return this.commitDb<T[]>(
 			tableName,
@@ -131,22 +145,31 @@ export class TsIndexDb {
         key = z	            {key: 'equal' rangeValue: [z]}
      */
 	count<T>({
+		name,
 		tableName,
 		key,
 		countCondition,
-	}: Pick<DbOperate<T>, 'key' | 'tableName' | 'countCondition'>) {
-		const mapCondition: MapCondition = {
+	}: Pick<DbOperator<T>, 'key' | 'tableName' | 'countCondition' | 'name'>) {
+		const mapCondition: ConditionMap = {
 			equal: IDBKeyRange.only,
 			gt: IDBKeyRange.lowerBound,
 			lt: IDBKeyRange.upperBound,
 			between: IDBKeyRange.bound,
 		};
 		return this.commitDb<T>(
-			tableName,
-			(transaction: IDBObjectStore) =>
-				transaction
-					.index(key)
-					.count(mapCondition[countCondition.type](...countCondition.rangeValue)),
+			name || tableName,
+			(transaction: IDBObjectStore) => {
+				const count = transaction.index(key).count;
+				if (countCondition.type === 'equal') {
+					return count(mapCondition.equal(...countCondition.rangeValue));
+				} else if (countCondition.type === 'gt') {
+					return count(mapCondition.gt(...countCondition.rangeValue));
+				} else if (countCondition.type === 'lt') {
+					return count(mapCondition.lt(...countCondition.rangeValue));
+				} else {
+					return count(mapCondition.between(...countCondition.rangeValue));
+				}
+			},
 			'readonly',
 			(e: any, resolve: (data: T) => void) => {
 				resolve(e.target.result || null);
@@ -163,12 +186,13 @@ export class TsIndexDb {
 	 *
 	 * */
 	query_by_keyValue<T>({
+		name,
 		tableName,
 		key,
 		value,
-	}: Pick<DbOperate<T>, 'tableName' | 'key' | 'value'>) {
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'key' | 'value'>) {
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.index(key).get(value),
 			'readonly',
 			(e: any, resolve: (data: T) => void) => {
@@ -185,11 +209,12 @@ export class TsIndexDb {
 	 *
 	 * */
 	query_by_primaryKey<T>({
+		name,
 		tableName,
 		value,
-	}: Pick<DbOperate<T>, 'tableName' | 'value'>) {
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value'>) {
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.get(value),
 			'readonly',
 			(e: any, resolve: (data: T) => void) => {
@@ -209,13 +234,14 @@ export class TsIndexDb {
 	 *   @property {Function} handle 处理函数，接收本条数据的引用，对其修改
 	 * */
 	update<T>({
+		name,
 		tableName,
 		condition,
 		handle,
-	}: Pick<DbOperate<T>, 'tableName' | 'condition' | 'handle'>) {
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'condition' | 'handle'>) {
 		const res: T[] = [];
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readwrite',
 			(e: any, resolve: (data: T[]) => void) => {
@@ -242,12 +268,13 @@ export class TsIndexDb {
 	 *   @property {Function} handle 处理函数，接收本条数据的引用，对其修改
 	 * */
 	update_by_primaryKey<T>({
+		name,
 		tableName,
 		value,
 		handle,
-	}: Pick<DbOperate<T>, 'tableName' | 'value' | 'handle'>) {
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value' | 'handle'>) {
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.get(value),
 			'readwrite',
 			(e: any, resolve: (data: T | null) => void, store: IDBObjectStore) => {
@@ -270,10 +297,14 @@ export class TsIndexDb {
 	 *   @property {String} tableName 表名
 	 *   @property {Object} data 插入的数据
 	 * */
-	insert<T>({ tableName, data }: Pick<DbOperate<T>, 'tableName' | 'data'>) {
+	insert<T>({
+		name,
+		tableName,
+		data,
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'data'>) {
 		return this.commitDb<T>(
-			tableName,
-			undefined,
+			name || tableName,
+			void 0,
 			'readwrite',
 			(_: any, resolve: () => void, store: IDBObjectStore) => {
 				data instanceof Array ? data.forEach((v) => store.put(v)) : store.put(data);
@@ -290,10 +321,14 @@ export class TsIndexDb {
 	 *      @arg {Object} 每个元素
 	 *      @return 条件
 	 * */
-	delete<T>({ tableName, condition }: Pick<DbOperate<T>, 'tableName' | 'condition'>) {
+	delete<T>({
+		name,
+		tableName,
+		condition,
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'condition'>) {
 		const res: T[] = [];
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readwrite',
 			(e: any, resolve: (data: T[]) => void) => {
@@ -318,11 +353,12 @@ export class TsIndexDb {
 	 *   @property {String\|Number} value 目标主键值
 	 * */
 	delete_by_primaryKey<T>({
+		name,
 		tableName,
 		value,
-	}: Pick<DbOperate<T>, 'tableName' | 'value'>) {
+	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value'>) {
 		return this.commitDb<T>(
-			tableName,
+			name || tableName,
 			(transaction: IDBObjectStore) => transaction.delete(value),
 			'readwrite',
 			(e: any, resolve: () => void) => {
@@ -337,7 +373,7 @@ export class TsIndexDb {
 	 * @method 打开数据库
 	 */
 	open_db() {
-		return new Promise<TsIndexDb>((resolve, reject) => {
+		return new Promise<TsIndexDB>((resolve, reject) => {
 			const request = window.indexedDB.open(this.dbName, this.version);
 			request.onerror = (e) => {
 				reject(e);
@@ -359,8 +395,10 @@ export class TsIndexDb {
 			};
 			//数据库升级
 			request.onupgradeneeded = (e) => {
-				this.tableList.forEach((element: DbTable) => {
-					this.create_table((e.target as any).result, element);
+				this.tableList.forEach((element: DBTable) => {
+					if (e.target) {
+						this.create_table((e.target as any).result, element);
+					}
 				});
 			};
 		});
@@ -377,9 +415,11 @@ export class TsIndexDb {
 					resolve('请开启数据库');
 					return;
 				}
-				this.db!.close();
+				if (typeof this.db.close === 'function') {
+					this.db.close();
+				}
 				this.db = null;
-				TsIndexDb._instance = null;
+				TsIndexDB._instance = void 0;
 				resolve(true);
 			} catch (error) {
 				reject(error);
@@ -405,9 +445,9 @@ export class TsIndexDb {
 	 * @method 删除表数据
 	 * @param {String}name 数据库名称
 	 */
-	delete_table(tableName: string) {
+	delete_table(name: string) {
 		return this.commitDb(
-			tableName,
+			name,
 			(transaction: IDBObjectStore) => transaction.clear(),
 			'readwrite',
 			(_: any, resolve: () => void) => {
@@ -420,64 +460,19 @@ export class TsIndexDb {
 	 * @option<Object>  keyPath指定主键 autoIncrement是否自增
 	 * @index 索引配置
 	 * */
-	private create_table(idb: any, { tableName, option, indexs = [] }: DbTable) {
-		if (!idb.objectStoreNames.contains(tableName)) {
-			const store = idb.createObjectStore(tableName, option);
-			for (const { key, option } of indexs) {
+	private create_table(
+		idb: IDBDatabase,
+		{ name, tableName, option, indexs, indexes }: DBTable,
+	) {
+		const target = name || tableName;
+		if (!idb.objectStoreNames.contains(target)) {
+			const store = idb.createObjectStore(target, option);
+			const entries = indexes || indexs || [];
+			for (const { key, option } of entries) {
 				store.createIndex(key, key, option);
 			}
 		}
 	}
-
-	/**
-	 * 提交Db请求
-	 * @param tableName  表名
-	 * @param commit 提交具体函数
-	 * @param mode 事物方式
-	 * @param backF 游标方法
-	 */
-	private commitDb<T>(
-		tableName: string,
-		commit?: (transaction: IDBObjectStore) => IDBRequest<any>,
-		mode: IDBTransactionMode = 'readwrite',
-		backF?: (request: any, resolve: any, store: IDBObjectStore) => void,
-	) {
-		return new Promise<T>((resolve, reject) => {
-			const task = () => {
-				try {
-					if (this.db) {
-						const store = this.db.transaction(tableName, mode).objectStore(tableName);
-						if (!commit) {
-							backF!(null, resolve, store);
-							return;
-						}
-						const res = commit(store);
-						res!.onsuccess = (e: any) => {
-							if (backF) {
-								backF(e, resolve, store);
-							} else {
-								resolve(e);
-							}
-						};
-						res!.onerror = (event) => {
-							reject(event);
-						};
-					} else {
-						reject(new Error('请开启数据库'));
-					}
-				} catch (error) {
-					reject(error);
-				}
-			};
-
-			if (!this.db) {
-				this.queue.push(task);
-			} else {
-				task();
-			}
-		});
-	}
-
 	/**
 	 * @method 游标开启成功,遍历游标
 	 * @param {Function} 条件

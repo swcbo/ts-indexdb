@@ -3,34 +3,79 @@ import type {
 	DBRequestEventTarget,
 	DBTable,
 	DbOperator,
-	IndexDB,
+	Options,
 } from './types';
 
-export class TsIndexDB {
-	private dbName: string = ''; //数据库名称
-	private version: number = 1; //数据库版本
-	private tableList: DBTable[] = []; //表单列表
-	private db: IDBDatabase | null = null;
-	private queue: (() => void)[] = []; //事务队列，实例化一次以后下次打开页面时数据库自启动
-	constructor({ dbName, name, version, tables }: IndexDB) {
-		this.dbName = dbName || name;
+export class IndexDB {
+	/**
+	 * Static instance variable to hold the singleton instance
+	 */
+	private static instance: IndexDB | undefined;
+	/**
+	 * database name(数据库名称)
+	 */
+	private name: string = '';
+	/**
+	 * database version(数据库版本)
+	 */
+	private version: number = 1;
+	/**
+	 * List of database tables(数据表列表)
+	 */
+	private tableList: DBTable[] = [];
+	/**
+	 * db instance
+	 */
+	private db: IDBDatabase | undefined = void 0;
+	/**
+	 * transaction queue(事务队列)
+	 *
+	 * 实例化一次以后下次打开页面时数据库自启动
+	 */
+	private queue: (() => void)[] = [];
+	/**
+	 * Private constructor to prevent instantiation from outside the class.
+	 *
+	 * This ensures that the class can only be instantiated from within the getInstance method,
+	 *
+	 * enforcing the singleton pattern.
+	 *
+	 * 将构造函数设置为私有，防止外部直接创建类的实例
+	 *
+	 * @param {Options} options - The configuration options for the database, including name, version, and tables.
+	 */
+	private constructor({ name, version, tables }: Options) {
+		this.name = name;
 		this.version = version;
 		this.tableList = tables;
+		// Singleton
+		IndexDB.instance = this;
 	}
 
-	private static _instance?: TsIndexDB;
-
-	public static getInstance(options?: IndexDB): TsIndexDB | undefined {
-		if (TsIndexDB._instance) {
-			return TsIndexDB._instance;
+	public static init(options: Options): Promise<IndexDB> {
+		if (!this.instance) {
+			this.instance = new IndexDB(options);
+			return this.instance.open_db();
 		}
-		if (options) {
-			const instance = new TsIndexDB(options);
-			TsIndexDB._instance = instance;
-			return instance;
-		}
-		return void 0;
+		return Promise.resolve(this.instance);
 	}
+	/**
+	 * Public static method to get the singleton instance of the IndexDB class.
+	 * If an instance does not already exist, it creates one with the provided options.
+	 * If an instance already exists, it returns that instance, ignoring any passed options.
+	 *
+	 * This method ensures that there is only ever one instance of the IndexDB class.
+	 *
+	 * @param {Options} options - The configuration options for the database, necessary only when creating the instance for the first time.
+	 * @returns {IndexDB} The singleton instance of the IndexDB class.
+	 */
+	public static getInstance(): IndexDB {
+		if (!this.instance) {
+			throw Error('IndexDB instance not initialized. Call init() first.');
+		}
+		return this.instance;
+	}
+	
 
 	/**
 	 * 提交Db请求
@@ -56,7 +101,7 @@ export class TsIndexDB {
 						}
 						const res = commit(store);
 						// todo
-						res.onsuccess = (e: DBEvent<T>) => {
+						res.onsuccess = (e: any) => {
 							if (typeof callback === 'function') {
 								callback(e, resolve, store);
 							} else {
@@ -373,8 +418,8 @@ export class TsIndexDB {
 	 * @method 打开数据库
 	 */
 	open_db() {
-		return new Promise<TsIndexDB>((resolve, reject) => {
-			const request = window.indexedDB.open(this.dbName, this.version);
+		return new Promise<IndexDB>((resolve, reject) => {
+			const request = window.indexedDB.open(this.name, this.version);
 			request.onerror = (e) => {
 				reject(e);
 			};
@@ -418,8 +463,8 @@ export class TsIndexDB {
 				if (typeof this.db.close === 'function') {
 					this.db.close();
 				}
-				this.db = null;
-				TsIndexDB._instance = void 0;
+				this.db = void 0;
+				IndexDB.instance = void 0;
 				resolve(true);
 			} catch (error) {
 				reject(error);

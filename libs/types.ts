@@ -1,21 +1,26 @@
 /**
  * @deprecated
  *
- * use IndexDb replaced
+ * use Options replaced
  */
 export type IIndexDb = {
-	dbName: string;
-	version: number;
-	tables: DbTable[];
-};
-
-export type IndexDB = {
 	/**
 	 * @deprecated
 	 *
 	 * use name replaced
 	 */
 	dbName: string;
+	/**
+	 * next release version will be required
+	 *
+	 * dbName will be remove in next release version
+	 */
+	name?: string;
+	version: number;
+	tables: DBTable[];
+};
+
+export type Options = {
 	name: string;
 	version: number;
 	tables: DBTable[];

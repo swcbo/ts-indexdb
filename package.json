@@ -1,52 +1,54 @@
 {
-  "name": "ts-indexdb",
-  "version": "0.0.8",
-  "description": "基于typescript的indexDb封装",
-  "typings": "dist/index.d.ts",
-  "scripts": {
-    "cjs": "tsc -p cjs.tsconfig.json",
-    "esm": "tsc -p esm.tsconfig.json",
-    "declare": "tsc -p declare.tsconfig.json",
-    "check": "tsc --noEmit",
-    "clean": "rimraf cjs esm typings",
-    "build": "pnpm run check && pnpm run clean && pnpm run cjs && pnpm run esm && pnpm run declare",
-    "test": "vitest",
-    "coverage": "vitest run --coverage"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/q1104133609/Ts-IndexDb.git"
-  },
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
-  "types": "typings/index.d.ts",
-  "files": [
-    "cjs",
-    "esm",
-    "typings"
-  ],
-  "keywords": [
-    "index-db",
-    "typescript"
-  ],
-  "author": "swcbo",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/q1104133609/Ts-IndexDb/issues"
-  },
-  "homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "prettier": "^3.2.5",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.3.3",
-    "vitest": "^1.3.1"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+	"name": "ts-indexdb",
+	"version": "0.0.8",
+	"description": "基于typescript的indexDb封装",
+	"scripts": {
+		"cjs": "tsc -p cjs.tsconfig.json",
+		"esm": "tsc -p esm.tsconfig.json",
+		"declare": "tsc -p declare.tsconfig.json",
+		"check": "tsc --noEmit",
+		"clean": "rimraf cjs esm typings",
+		"build": "pnpm run check && pnpm run clean && pnpm run cjs && pnpm run esm && pnpm run declare",
+		"test": "vitest",
+		"coverage": "vitest run --coverage",
+		"update:patch": "pnpm version patch",
+		"update:minor": "pnpm version minor",
+		"update:major": "pnpm version major"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/q1104133609/Ts-IndexDb.git"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"types": "typings/index.d.ts",
+	"files": [
+		"cjs",
+		"esm",
+		"typings"
+	],
+	"keywords": [
+		"index-db",
+		"typescript"
+	],
+	"author": "swcbo",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/q1104133609/Ts-IndexDb/issues"
+	},
+	"homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^7.1.0",
+		"@typescript-eslint/parser": "^7.1.0",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.1.3",
+		"prettier": "^3.2.5",
+		"rimraf": "^5.0.5",
+		"typescript": "^5.3.3",
+		"vitest": "^1.3.1"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }

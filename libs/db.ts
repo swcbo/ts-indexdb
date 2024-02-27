@@ -34,6 +34,10 @@ export class IndexDB {
 	 */
 	private queue: (() => void)[] = [];
 	/**
+	 * db connect status(数据库连接状态)
+	 */
+	connectStatus: boolean = false;
+	/**
 	 * Private constructor to prevent instantiation from outside the class.
 	 *
 	 * This ensures that the class can only be instantiated from within the getInstance method,
@@ -75,7 +79,6 @@ export class IndexDB {
 		}
 		return this.instance;
 	}
-	
 
 	/**
 	 * 提交Db请求
@@ -434,7 +437,7 @@ export class IndexDB {
 							task();
 						}
 					}
-
+					this.connectStatus = true;
 					resolve(this);
 				}
 			};
@@ -465,6 +468,7 @@ export class IndexDB {
 				}
 				this.db = void 0;
 				IndexDB.instance = void 0;
+				this.connectStatus = false;
 				resolve(true);
 			} catch (error) {
 				reject(error);
@@ -534,5 +538,9 @@ export class IndexDB {
 		} else {
 			success();
 		}
+	}
+
+	getConnectStatus() {
+		return this.connectStatus;
 	}
 }

@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - '16' # 指定Node.js的版本为16
+  - '18' # 指定Node.js的版本为16
 
 # 启用corepack以使用pnpm
 before_install:

@@ -5,10 +5,11 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "cjs": "tsc -p cjs.tsconfig.json",
-		"esm": "tsc -p esm.tsconfig.json",
-		"declare": "tsc -p declare.tsconfig.json",
+    "esm": "tsc -p esm.tsconfig.json",
+    "declare": "tsc -p declare.tsconfig.json",
     "check": "tsc --noEmit",
-    "build": "pnpm run check && pnpm run cjs && pnpm run esm && pnpm run declare",
+    "clean": "rimraf cjs esm typings",
+    "build": "pnpm run check && pnpm run clean && pnpm run cjs && pnpm run esm && pnpm run declare",
     "test": "vitest",
     "coverage": "vitest run --coverage"
   },
@@ -35,6 +36,7 @@
   },
   "homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
   "devDependencies": {
+    "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
     "vitest": "^1.3.1"
   },

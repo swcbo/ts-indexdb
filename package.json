@@ -4,7 +4,11 @@
   "description": "基于typescript的indexDb封装",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "cjs": "tsc -p cjs.tsconfig.json",
+		"esm": "tsc -p esm.tsconfig.json",
+		"declare": "tsc -p declare.tsconfig.json",
+    "check": "tsc --noEmit",
+    "build": "pnpm run check && pnpm run cjs && pnpm run esm && pnpm run declare",
     "test": "vitest",
     "coverage": "vitest run --coverage"
   },

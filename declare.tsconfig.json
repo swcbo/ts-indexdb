@@ -4,5 +4,6 @@
         "declaration": true,
         "emitDeclarationOnly": true,
         "declarationDir": "./typings"
-    } 
+    },
+    "include": ["libs"]
 }

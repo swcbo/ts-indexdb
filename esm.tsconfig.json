@@ -3,5 +3,6 @@
     "compilerOptions": {
         "module": "esnext",
         "outDir": "./esm"
-    } 
+    },
+    "include": ["libs"] 
 }

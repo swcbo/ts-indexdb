@@ -2,3 +2,5 @@ node_modules
 cjs/
 esm/
 typings/
+coverage/
+html/

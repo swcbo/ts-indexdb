@@ -5,6 +5,7 @@ import type {
 	DbOperator,
 	Options,
 } from './types';
+import { isSameOptions } from './utils';
 
 export class IndexDB {
 	/**
@@ -55,31 +56,181 @@ export class IndexDB {
 		// Singleton
 		IndexDB.instance = this;
 	}
+	/**
+	 * 打开或创建并打开数据库。
+	 *
+	 * Opens or creates and then opens a database.
+	 *
+	 * @returns {Promise<IndexDB>} 返回一个Promise，该Promise在数据库成功打开后解析为当前IndexDB实例。
+	 *
+	 * Returns a promise that resolves to the current IndexDB instance once the database is successfully opened.
+	 *
+	 * 如果在打开数据库过程中遇到错误，Promise将被拒绝，并返回错误信息。
+	 *
+	 * If an error is encountered during the database opening process, the promise is rejected and returns an error message.
+	 *
+	 * @example
+	 * const db = new IndexDB({ name: 'myDatabase', version: 1 });
+	 * db.open().then(() => {
+	 *     console.log('Database opened successfully');
+	 * }).catch((error) => {
+	 *     console.error('Failed to open database', error);
+	 * });
+	 */
+	open() {
+		// 尝试根据指定的名称和版本号打开一个IndexedDB数据库。
+		// 如果成功连接，它将处理事务队列，然后返回当前数据库连接实例。
+		// 如果连接过程中遇到错误，则通过回调返回错误信息。
+		// 如果指定版本的数据库不存在，浏览器将尝试创建它，并可能自动触发数据库结构的更新。
+		// Attempts to open an IndexedDB database with the specified name and version.
+		// Upon successful connection, it processes the transaction queue, then returns the current database connection instance.
+		// If an error is encountered during the connection process, it returns the error information via callback.
+		// If the specified version of the database does not exist, the browser will attempt to create it, potentially triggering automatic updates to the database structure.
 
-	public static init(options: Options): Promise<IndexDB> {
-		if (!this.instance) {
-			this.instance = new IndexDB(options);
-			return this.instance.open_db();
-		}
-		return Promise.resolve(this.instance);
+		return new Promise<IndexDB>((resolve, reject) => {
+			if (window.indexedDB) {
+				const request = window.indexedDB.open(this.name, this.version);
+
+				request.onerror = (e) => {
+					// 处理数据库打开过程中遇到的错误。
+					// Handles errors encountered during the database opening process.
+					reject(e);
+				};
+
+				request.onsuccess = (event) => {
+					// 数据库成功打开后的处理逻辑。
+					// Processes after the database has successfully opened.
+					if (event.target) {
+						this.db = (event.target as DBRequestEventTarget).result;
+						// 依次处理事务队列中的任务。
+						// Processes tasks in the transaction queue.
+						let task: undefined | (() => void) = void 0;
+						while ((task = this.queue.shift())) {
+							task?.();
+						}
+						this.connectStatus = true; // 标记为已连接状态。
+						resolve(this); // 解析Promise为当前实例。
+					}
+				};
+				// 当数据库版本不存在或需要升级时触发，自动创建或更新表结构。
+				// This triggers the `onupgradeneeded` event for creating or updating table structures automatically.
+				request.onupgradeneeded = (e) => {
+					this.tableList.forEach((table: DBTable) => {
+						if (e.target) {
+							this.create_table((e.target as any).result, table);
+						}
+					});
+				};
+			} else {
+				// 若当前环境不支持IndexedDB。
+				// If IndexedDB is not supported in the current environment.
+				reject('IndexedDB is not supported in this environment.');
+			}
+		});
 	}
 	/**
-	 * Public static method to get the singleton instance of the IndexDB class.
-	 * If an instance does not already exist, it creates one with the provided options.
-	 * If an instance already exists, it returns that instance, ignoring any passed options.
+	 * 关闭数据库连接
 	 *
-	 * This method ensures that there is only ever one instance of the IndexDB class.
+	 * Closes the database connection
 	 *
-	 * @param {Options} options - The configuration options for the database, necessary only when creating the instance for the first time.
-	 * @returns {IndexDB} The singleton instance of the IndexDB class.
+	 * 此方法用于关闭当前打开的数据库连接
+	 *
+	 * This method is used to close the currently open database connection.
+	 *
+	 * @returns {Promise<boolean>} 返回一个承诺，该承诺在数据库成功关闭时解析为true，如果关闭过程中出现错误，则拒绝。
+	 *
+	 * Returns a promise that resolves to true when the database is successfully closed, or rejects if there is an error during the closure process.
+	 */
+	close() {
+		return new Promise<boolean>((resolve, reject) => {
+			try {
+				// 如果数据库已经打开，它会关闭数据库，重置实例属性，并将单例实例设置为undefined，表示没有活动的数据库连接
+				// If the database is open, it closes the database, resets the instance properties,
+				// and sets the singleton instance to undefined
+				if (this.db) {
+					this.db.close();
+					this.db = void 0;
+					IndexDB.instance = void 0;
+					this.name = '';
+					this.version = 1;
+					this.tableList = [];
+					this.connectStatus = false;
+				} else {
+					// 如果在没有打开数据库的情况下调用此方法，它将输出一条提示信息，告知用户首先需要连接到数据库。
+					// If this method is called without an open database, it logs a message prompting the user to connect to a database first.
+					console.log('Please connect to a database before calling close.');
+				}
+				resolve(true); // 成功关闭数据库，解析承诺为true
+			} catch (error) {
+				reject(error); // 如果关闭数据库过程中发生错误，拒绝承诺
+			}
+		});
+	}
+	/**
+	 * 初始化数据库实例
+	 *
+	 * Initializes the database instance.
+	 *
+	 * 此方法检查是否已经存在一个IndexDB实例。
+	 *
+	 * @param {Options} options - 包含数据库名称、版本和表结构的配置选项
+	 *
+	 * Configuration options containing the database name, version, and table structures.)
+	 *
+	 * @returns {Promise<IndexDB>} 返回一个承诺，该承诺在数据库成功初始化后解析为IndexDB实例
+	 *
+	 * Returns a promise that resolves to the IndexDB instance once the database has been successfully initialized.
+	 */
+	public static init(options: Options): Promise<IndexDB> {
+		// 如果实例已存在，它将比较当前实例的配置与新提供的配置。
+		// This method checks if an IndexDB instance already exists.
+		if (this.instance) {
+			const old = {
+				name: this.instance.name,
+				version: this.instance.version,
+				tables: this.instance.tableList,
+			};
+			if (isSameOptions(old, options)) {
+				// 配置相同，将发出警告提示不应重复初始化
+				// If the configuration is the same,
+				// a warning is issued that the instance should not be initialized repeatedly				console.warn('The instance should not be initialized repeatedly');
+			} else {
+				// 配置不同，发出警告说明无法用新配置重置当前实例
+				// If the configurations differ, a warning is issued that the current instance cannot be reset with new configurations.
+				console.warn('Unable to reset the current instance with the new configuration');
+			}
+			// 返回现有实例的承诺
+			return Promise.resolve(this.instance);
+		}
+		// 如果不存在，它将创建一个新的实例，并打开数据库
+		// If not, it creates a new instance and opens the database.
+		this.instance = new IndexDB(options);
+		return this.instance.open();
+	}
+	/**
+	 * 获取IndexDB类的单例实例
+	 * Retrieves the singleton instance of the IndexDB class
+	 *
+	 * 此方法用于获取已经初始化的IndexDB实例,如果实例尚未通过init方法初始化，则抛出错误。
+	 *
+	 *
+	 * This method is used to obtain the already initialized IndexDB instance.
+	 * If the instance has not been initialized through the init method, it throws an error.
+	 *
+	 * @returns {IndexDB} 返回IndexDB的单例实例
+	 *
+	 * Returns the singleton instance of the IndexDB.
 	 */
 	public static getInstance(): IndexDB {
-		if (!this.instance) {
-			throw Error('IndexDB instance not initialized. Call init() first.');
+		// 注意：在调用此方法之前，必须先调用init方法进行初始化。
+		// Note: The init method must be called to initialize before calling this method.
+		if (this.instance) {
+			return this.instance;
 		}
-		return this.instance;
+		// 如果在未初始化的情况下调用getInstance，将抛出错误提示先调用init
+		// If getInstance is called without initialization, an error is thrown advising to call init first
+		throw Error('IndexDB instance not initialized. Call init() first.');
 	}
-
 	/**
 	 * 提交Db请求
 	 * @param name  表名
@@ -87,9 +238,9 @@ export class IndexDB {
 	 * @param mode 事物方式
 	 * @param backF 游标方法
 	 */
-	private commitDb<T>(
+	private commit<T>(
 		name: string,
-		commit?: (transaction: IDBObjectStore) => IDBRequest,
+		commitFn?: (transaction: IDBObjectStore) => IDBRequest,
 		mode: IDBTransactionMode = 'readwrite',
 		callback?: (request: any, resolve: any, store: IDBObjectStore) => void,
 	) {
@@ -98,11 +249,11 @@ export class IndexDB {
 				try {
 					if (this.db) {
 						const store = this.db.transaction(name, mode).objectStore(name);
-						if (!commit) {
+						if (!commitFn) {
 							callback!(null, resolve, store);
 							return;
 						}
-						const res = commit(store);
+						const res = commitFn(store);
 						// todo
 						res.onsuccess = (e: any) => {
 							if (typeof callback === 'function') {
@@ -138,7 +289,7 @@ export class IndexDB {
 	 */
 	queryAll<T>({ tableName }: Pick<DbOperator<T>, 'tableName'>) {
 		const res: T[] = [];
-		return this.commitDb<T[]>(
+		return this.commit<T[]>(
 			tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readonly',
@@ -160,7 +311,7 @@ export class IndexDB {
 	 * */
 	query<T>({ tableName, condition }: Pick<DbOperator<T>, 'condition' | 'tableName'>) {
 		const res: T[] = [];
-		return this.commitDb<T[]>(
+		return this.commit<T[]>(
 			tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readonly',
@@ -204,7 +355,7 @@ export class IndexDB {
 			lt: IDBKeyRange.upperBound,
 			between: IDBKeyRange.bound,
 		};
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => {
 				const count = transaction.index(key).count;
@@ -239,7 +390,7 @@ export class IndexDB {
 		key,
 		value,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'key' | 'value'>) {
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.index(key).get(value),
 			'readonly',
@@ -261,7 +412,7 @@ export class IndexDB {
 		tableName,
 		value,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value'>) {
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.get(value),
 			'readonly',
@@ -288,7 +439,7 @@ export class IndexDB {
 		handle,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'condition' | 'handle'>) {
 		const res: T[] = [];
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readwrite',
@@ -321,7 +472,7 @@ export class IndexDB {
 		value,
 		handle,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value' | 'handle'>) {
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.get(value),
 			'readwrite',
@@ -350,7 +501,7 @@ export class IndexDB {
 		tableName,
 		data,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'data'>) {
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			void 0,
 			'readwrite',
@@ -375,7 +526,7 @@ export class IndexDB {
 		condition,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'condition'>) {
 		const res: T[] = [];
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.openCursor(),
 			'readwrite',
@@ -405,7 +556,7 @@ export class IndexDB {
 		tableName,
 		value,
 	}: Pick<DbOperator<T>, 'name' | 'tableName' | 'value'>) {
-		return this.commitDb<T>(
+		return this.commit<T>(
 			name || tableName,
 			(transaction: IDBObjectStore) => transaction.delete(value),
 			'readwrite',
@@ -417,64 +568,6 @@ export class IndexDB {
 
 	//=================relate db================================
 
-	/**
-	 * @method 打开数据库
-	 */
-	open_db() {
-		return new Promise<IndexDB>((resolve, reject) => {
-			const request = window.indexedDB.open(this.name, this.version);
-			request.onerror = (e) => {
-				reject(e);
-			};
-			request.onsuccess = (event) => {
-				if (event.target) {
-					this.db = (event.target as DBRequestEventTarget).result;
-					let task: undefined | (() => void) = void 0;
-
-					while (task) {
-						task = this.queue.shift();
-						if (task) {
-							task();
-						}
-					}
-					this.connectStatus = true;
-					resolve(this);
-				}
-			};
-			//数据库升级
-			request.onupgradeneeded = (e) => {
-				this.tableList.forEach((element: DBTable) => {
-					if (e.target) {
-						this.create_table((e.target as any).result, element);
-					}
-				});
-			};
-		});
-	}
-
-	/**
-	 *@method 关闭数据库
-	 * @param  {[type]} db [数据库名称]
-	 */
-	close_db() {
-		return new Promise((resolve, reject) => {
-			try {
-				if (!this.db) {
-					resolve('请开启数据库');
-					return;
-				}
-				if (typeof this.db.close === 'function') {
-					this.db.close();
-				}
-				this.db = void 0;
-				IndexDB.instance = void 0;
-				this.connectStatus = false;
-				resolve(true);
-			} catch (error) {
-				reject(error);
-			}
-		});
-	}
 	/**
 	 * @method 删除数据库
 	 * @param {String}name 数据库名称
@@ -495,7 +588,7 @@ export class IndexDB {
 	 * @param {String}name 数据库名称
 	 */
 	delete_table(name: string) {
-		return this.commitDb(
+		return this.commit(
 			name,
 			(transaction: IDBObjectStore) => transaction.clear(),
 			'readwrite',

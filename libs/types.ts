@@ -21,8 +21,17 @@ export type IIndexDb = {
 };
 
 export type Options = {
+	/**
+	 * database name(数据库名称)
+	 */
 	name: string;
+	/**
+	 * database version(数据库版本号)
+	 */
 	version: number;
+	/**
+	 * database tables(数据表)
+	 */
 	tables: DBTable[];
 };
 /**

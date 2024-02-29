@@ -6,40 +6,17 @@
  * @LastEditTime: 2020-04-10 09:13:06
  */
 
-import { TsIndexDb, IIndexDb } from "./TsIndexDb"
+import { IndexDB } from './db';
+import type { Options } from './types';
 
-
-// /**
-//  * @method 初始化函数
-//  * @param param0 
-//  * @param isMany 
-//  */
-// export const initMany = (dbList: IIndexDb[]): Promise<TsIndexDb> => {
-//     const db = TsIndexDb.getInstance({
-//         dbName,
-//         version,
-//         tables
-//     })
-//     return db.open_db()
-// }
 /**
  * @method 初始化函数
- * @param param0 
- * @param isMany 
  */
-export const init = ({ dbName, version = 1, tables = [] }: IIndexDb): Promise<TsIndexDb> => {
-    const db = TsIndexDb.getInstance({
-        dbName,
-        version,
-        tables
-    })
-    return db.open_db()
-}
+export const init = (options: Options): Promise<IndexDB> => {
+	return IndexDB.init(options);
+};
 
 /**
  * @method 获取单例的单个对象
  */
-export const getInstance = () => TsIndexDb.getInstance()
-
-
-
+export const getInstance = () => IndexDB.getInstance();

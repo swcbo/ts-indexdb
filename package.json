@@ -1,33 +1,60 @@
 {
-  "name": "ts-indexdb",
-  "version": "0.0.8",
-  "description": "typescript indexDb封装",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "./node_modules/karma/bin/karma start"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/q1104133609/Ts-IndexDb.git"
-  },
-  "keywords": [
-    "indexdb",
-    "typescript"
-  ],
-  "author": "小白",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/q1104133609/Ts-IndexDb/issues"
-  },
-  "homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
-  "devDependencies": {
-    "chai": "^4.2.0",
-    "karma": "^6.3.16",
-    "karma-chrome-launcher": "^3.1.0",
-    "karma-mocha": "^1.3.0",
-    "mocha": "^7.1.1",
-    "typescript": "^3.8.3"
-  }
+	"name": "ts-indexdb",
+	"version": "0.0.8",
+	"description": "基于typescript的indexDb封装",
+	"scripts": {
+		"cjs": "tsc -p cjs.tsconfig.json",
+		"esm": "tsc -p esm.tsconfig.json",
+		"declare": "tsc -p declare.tsconfig.json",
+		"check": "tsc --noEmit",
+		"clean": "rimraf cjs esm typings",
+		"build": "pnpm run check && pnpm run clean && pnpm run cjs && pnpm run esm && pnpm run declare",
+		"test": "vitest",
+		"update:patch": "pnpm version patch",
+		"update:minor": "pnpm version minor",
+		"update:major": "pnpm version major",
+		"changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/q1104133609/Ts-IndexDb.git"
+	},
+	"main": "cjs/index.js",
+	"module": "esm/index.js",
+	"types": "typings/index.d.ts",
+	"files": [
+		"cjs",
+		"esm",
+		"typings"
+	],
+	"keywords": [
+		"index-db",
+		"typescript"
+	],
+	"author": "swcbo",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/q1104133609/Ts-IndexDb/issues"
+	},
+	"homepage": "https://github.com/q1104133609/Ts-IndexDb#readme",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^7.1.0",
+		"@typescript-eslint/parser": "^7.1.0",
+		"@vitest/browser": "^1.3.1",
+		"@vitest/coverage-istanbul": "^1.3.1",
+		"@vitest/ui": "^1.3.1",
+		"conventional-changelog-cli": "^4.1.0",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.1.3",
+		"prettier": "^3.2.5",
+		"rimraf": "^5.0.5",
+		"typescript": "^5.3.3",
+		"vite": "^5.1.4",
+		"vitest": "^1.3.1",
+		"webdriverio": "^8.32.3"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }

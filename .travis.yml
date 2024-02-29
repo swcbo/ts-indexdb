@@ -1,7 +1,16 @@
-language : node_js
-node_js :
- - "10"
+language: node_js
+node_js:
+  - '18' # 指定Node.js的版本为16
+
+# 启用corepack以使用pnpm
+before_install:
+  - corepack enable
+  - corepack prepare pnpm@latest --activate
+
+# 安装项目依赖
 install:
- - npm i
+  - pnpm install
+
+# 构建项目
 script:
- - npm run build
+  - pnpm run build

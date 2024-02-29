@@ -11,11 +11,33 @@
   <a href="https://npmjs.com/package/ts-indexdb"><img src="https://img.shields.io/npm/v/ts-indexdb.svg?logo=npm" alt="npm package"></a>
   <a href="https://bundlephobia.com/package/ts-indexdb@latest"><img src="https://img.shields.io/bundlephobia/min/ts-indexdb.svg?logo=typescript" alt="size"></a>
 </p>
+
+## TODOs
+
+- [ ] 在库中重新定义ts提供的不够完善的indexDB相关Event的类型
+  - [ ] IDBOpenDBRequest 的 onerror 中的 Event
+  - [ ] IDBOpenDBRequest 的 onsuccess 中的 Event
+  - [ ] IDBOpenDBRequest 的 onupgradeneeded 中的 IDBVersionChangeEvent
+- [ ] 为class IndexDB 增加 泛型 或者 readonly 化 db options 实现使用的智能提示
+- [ ] 重构代码,完全去除 IndexDB 中的 any 类型,让代码更安全
+- [x] 替换 karma 为 vitest
+- [x] 使用 pnpm 作为 包管理工具
+- [ ] 增加 example 文件，为后续使用在线编辑器演示做准备
+- [x] 增加 changelog
+- [ ] 补充测试用例
+- [ ] 达成95%的代码覆盖率测试
+- [x] 增加格式化工具
+- [ ] 增加 commit lint 工具
+- [x] 更新 travis yaml 文件
+- [ ]  标准化版本更新方式
+- [x] 更新开源协议
+
 ## Install
 
 ```sh
 npm install ts-indexdb
 yarn add ts-indexdb
+pnpm add ts-indexdb
 ```
 ## Usage
 ### Typescript

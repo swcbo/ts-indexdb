@@ -1,2 +1,6 @@
 node_modules
-dist
+cjs/
+esm/
+typings/
+coverage/
+html/

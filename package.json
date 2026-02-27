@@ -1,11 +1,17 @@
 {
   "name": "ts-indexdb",
-  "version": "0.0.8",
-  "description": "typescript indexDb封装",
+  "version": "1.0.0",
+  "description": "TypeScript IndexedDB 封装库 - Promise化、泛型支持、多实例、分页查询",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
     "test": "./node_modules/karma/bin/karma start"
   },
   "repository": {
@@ -14,7 +20,11 @@
   },
   "keywords": [
     "indexdb",
-    "typescript"
+    "indexeddb",
+    "typescript",
+    "browser-storage",
+    "promise",
+    "crud"
   ],
   "author": "小白",
   "license": "ISC",
@@ -28,6 +38,6 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-mocha": "^1.3.0",
     "mocha": "^7.1.1",
-    "typescript": "^3.8.3"
+    "typescript": "^5.4.0"
   }
 }

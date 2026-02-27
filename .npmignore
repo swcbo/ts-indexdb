@@ -1,1 +1,8 @@
-lib/
+libs/
+test/
+.travis.yml
+karma.conf.js
+tsconfig.json
+yarn.lock
+yarn-error.log
+*.log

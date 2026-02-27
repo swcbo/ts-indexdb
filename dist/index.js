@@ -53,15 +53,33 @@ const initMany = (dbList) => {
 };
 exports.initMany = initMany;
 /**
- * 获取已初始化的数据库实例（单库场景）
+ * 获取已初始化的数据库实例
+ * - 单库场景：不传参数，自动返回唯一已初始化的实例
+ * - 多库场景：传入 dbName 指定获取哪个库的实例
+ * @param dbName 数据库名称（可选；单库时可省略）
  * @throws {IndexDbError} 若数据库尚未初始化则抛出错误
  *
  * @example
- * // 在 init() 之后调用
+ * // 单库：在 init() 之后调用
  * const db = getInstance()
- * await db.queryAll({ tableName: 'users' })
+ * // 多库：在 initMany() 之后调用
+ * const db = getInstance('userStore')
  */
-const getInstance = () => TsIndexDb_1.TsIndexDb.getExistingInstance();
+const getInstance = (dbName) => {
+    const names = TsIndexDb_1.TsIndexDb.getInstanceNames();
+    if (dbName) {
+        return TsIndexDb_1.TsIndexDb.getExistingInstance(dbName);
+    }
+    // 单库场景：自动返回唯一实例
+    if (names.length === 1) {
+        return TsIndexDb_1.TsIndexDb.getExistingInstance(names[0]);
+    }
+    // 无实例或多实例时抛出清晰的错误
+    if (names.length === 0) {
+        throw new TsIndexDb_1.IndexDbError('尚未初始化任何数据库，请先调用 init()。');
+    }
+    throw new TsIndexDb_1.IndexDbError(`存在多个数据库实例 [${names.join(', ')}]，请通过 getInstance(dbName) 指定要获取哪个。`);
+};
 exports.getInstance = getInstance;
 /**
  * 按名称获取已初始化的数据库实例（多库场景）

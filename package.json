@@ -12,7 +12,9 @@
     "build:watch": "tsc --watch",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "test": "./node_modules/karma/bin/karma start"
+    "test": "npm run test:node",
+    "test:node": "node --test test/integration.test.js",
+    "test:browser": "./node_modules/karma/bin/karma start --single-run"
   },
   "repository": {
     "type": "git",

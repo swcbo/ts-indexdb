@@ -33,15 +33,19 @@ export declare const init: ({ dbName, version, tables }: IIndexDb) => Promise<Ts
  */
 export declare const initMany: (dbList: IIndexDb[]) => Promise<TsIndexDb[]>;
 /**
- * 获取已初始化的数据库实例（单库场景）
+ * 获取已初始化的数据库实例
+ * - 单库场景：不传参数，自动返回唯一已初始化的实例
+ * - 多库场景：传入 dbName 指定获取哪个库的实例
+ * @param dbName 数据库名称（可选；单库时可省略）
  * @throws {IndexDbError} 若数据库尚未初始化则抛出错误
  *
  * @example
- * // 在 init() 之后调用
+ * // 单库：在 init() 之后调用
  * const db = getInstance()
- * await db.queryAll({ tableName: 'users' })
+ * // 多库：在 initMany() 之后调用
+ * const db = getInstance('userStore')
  */
-export declare const getInstance: () => TsIndexDb;
+export declare const getInstance: (dbName?: string) => TsIndexDb;
 /**
  * 按名称获取已初始化的数据库实例（多库场景）
  * @param dbName 数据库名称
